@@ -19,14 +19,14 @@
     getItemEntities($scope.renderModel);
 
     function getItemEntities(items) {
-        _.each(items, function (item) {
+        _.each(items, function(item) {
             if (item.udi) {
                 var entityType = item.udi.indexOf("media") > -1 ? "Media" : "Document";
-                entityResource.getById(item.udi, entityType).then(function (data) {
+                entityResource.getById(item.udi, entityType).then(function(data) {
                     item.icon = iconHelper.convertFromLegacyIcon(data.icon);
                     item.published = (data.metaData && data.metaData.IsPublished === false && entityType === "Document") ? false : true;
                     item.trashed = data.trashed;
-                    if (link.trashed) {
+                    if (item.trashed) {
                         item.url = vm.labels.general_recycleBin;
                     }
                 });
@@ -38,7 +38,7 @@
         });
     }
 
-    $scope.onRemove = function (item) {
+    $scope.onRemove = function(item) {
         remove($scope.renderModel, item);
 
         currentForm.$setDirty();
@@ -59,28 +59,29 @@
         }
     }
 
-    $scope.isVisible = function (item) {
+    $scope.isVisible = function(item) {
         return $scope.model.config.removeNaviHideItems == true ? item.naviHide !== true : true;
     };
 
-    $scope.$on("formSubmitting", function (ev, args) {
+    $scope.$on("formSubmitting", function(ev, args) {
         $scope.model.value = $scope.renderModel;
     });
 
-    $scope.openLinkPicker = function (link, $index) {
+    $scope.openLinkPicker = function(link, $index) {
         var target = link ? {
             name: link.name,
             anchor: link.queryString,
             udi: link.udi,
             url: link.url,
-            target: link.target
+            target: link.target,
+            children: link.children
         } : null;
 
         var linkPicker = {
             currentTarget: target,
             dataTypeKey: "",
             ignoreUserStartNodes: true,
-            submit: function (model) {
+            submit: function(model) {
                 if (model.target.url || model.target.anchor) {
                     // if an anchor exists, check that it is appropriately prefixed
                     if (model.target.anchor && model.target.anchor[0] !== '?' && model.target.anchor[0] !== '#') {
@@ -104,12 +105,12 @@
                     }
 
                     link.description = link.url + (link.queryString ? link.queryString : '');
-                    link.children = [];
+                    link.children = model.currentTarget ? model.currentTarget.children : [];
 
                     if (link.udi) {
                         var entityType = model.target.isMedia ? "Media" : "Document";
 
-                        entityResource.getById(link.udi, entityType).then(function (data) {
+                        entityResource.getById(link.udi, entityType).then(function(data) {
                             link.icon = iconHelper.convertFromLegacyIcon(data.icon);
                             link.published = (data.metaData && data.metaData.IsPublished === false && entityType === "Document") ? false : true;
                             link.trashed = data.trashed;
@@ -126,7 +127,7 @@
                 }
                 editorService.close();
             },
-            close: function () {
+            close: function() {
                 editorService.close();
             }
         };
@@ -135,7 +136,7 @@
 
     function init() {
         localizationService.localizeMany(["general_recycleBin"])
-            .then(function (data) {
+            .then(function(data) {
                 vm.labels.general_recycleBin = data[0];
             });
     }
